@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dubai Traffic Incident Analysis — Project Part 2</title>
+  <script src="https://cdn.jsdelivr.net/npm/vega@6.2.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@6.1.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@7.0.2"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #fafafa;
+    }
+    h1 {
+      text-align: center;
+      color: #222;
+    }
+    h2 {
+      margin-top: 50px;
+      color: #333;
+    }
+    .chart {
+      margin: 30px auto;
+      width: 90%;
+      border: 1px solid #ddd;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Dubai Traffic Incident Analysis — Project Part 2</h1>
+
+  <!-- Task 1: Bar Chart -->
+  <h2>Task 1: Accident Distribution by Day of Week</h2>
+  <div id="barchart" class="chart"></div>
+
+  <!-- Task 2: Line Chart -->
+  <h2>Task 2: Accident Distribution by Hour of Day</h2>
+  <div id="linechart" class="chart"></div>
+
+  <!-- Task 3: Graduated Symbol -->
+  <h2>Task 3: Accident Distribution Across Dubai by Location</h2>
+  <div id="symbolmap" class="chart"></div>
+
+  <script>
+    
+    const barCh = {
+      "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+      "width": 700,
+      "height": 650,
+      "title": "Accident Distribution by Day of Week",
+      "data": {
+        "url": "https://raw.githubusercontent.com/sheriefAbdallah/CS318/refs/heads/main/Traffic_Incidents.csv",
+        "format": {
+          "type": "csv",
+          "parse": {"acci_time": "date:'%d/%m/%Y %H:%M:%S'"}
+        }
+      },
+      "transform": [
+        {"calculate": "timeFormat(datum.acci_time, '%A')", "as": "weekday"}
+      ],
+      "params": [
+        {"name": "highlight", "select": {"type": "point", "on": "pointerover"}},
+        {"name": "select", "select": "point"}
+      ],
+      "mark": {"type": "bar", "cursor": "pointer"},
+      "encoding": {
+        "x": {
+          "title": "Day of the Week",
+          "field": "weekday",
+          "type": "ordinal",
+          "axis": {"labelAngle": 0},
+          "sort": [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday"
+          ]
+        },
+        "y": {
+          "title": "Number of Accidents Reported",
+          "aggregate": "count",
+          "type": "quantitative"
+        },
+        "fillOpacity": {"condition": {"param": "select", "value": 1}, "value": 0.3},
+        "color": {
+          "title": "Day of the Week",
+          "field": "weekday",
+          "type": "nominal",
+          "scale": {"scheme": "tableau10"},
+          "sort": [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday"
+          ]
+        },
+        "tooltip": [
+          {"field": "weekday", "type": "ordinal", "title": "Day of Week"},
+          {
+            "aggregate": "count",
+            "type": "quantitative",
+            "title": "Accidents Reported"
+          }
+        ]
+      },
+      "config": {}
+    };
+
+    
+    const lineCh = {
+      "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+      "width": 1000,
+      "height": 600,
+      "title": "Accident Distribution by Hour of Day",
+      "data": {
+        "url": "https://raw.githubusercontent.com/sheriefAbdallah/CS318/refs/heads/main/Traffic_Incidents.csv",
+        "format": {
+          "type": "csv",
+          "parse": {"acci_time": "date:'%d/%m/%Y %H:%M:%S'"}
+        }
+      },
+      "transform": [
+        {"calculate": "hours(datum.acci_time)", "as": "hourofday"},
+        {"calculate": "timeFormat(datum.acci_time, '%A')", "as": "weekday"}
+      ],
+      "mark": {"type": "line", "point": {"size": 50}},
+      "encoding": {
+        "x": {
+          "title": "Hour of the Day",
+          "field": "hourofday",
+          "type": "ordinal",
+          "axis": {"labelAngle": 0}
+        },
+        "y": {
+          "title": "Number of Accidents Reported",
+          "aggregate": "count",
+          "type": "quantitative"
+        },
+        "color": {
+          "title": "Day of Week",
+          "field": "weekday",
+          "type": "nominal",
+          "sort": [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday"
+          ]
+        },
+        "tooltip": [
+          {"field": "weekday", "type": "ordinal", "title": "Day of Week"},
+          {"field": "hourofday", "type": "ordinal", "title": "Hour of Day"},
+          {
+            "aggregate": "count",
+            "type": "quantitative",
+            "title": "Accidents Reported"
+          }
+        ]
+      },
+      "config": {}
+    };
+
+    
+    const gsCh = {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "width": 800,
+      "height": 650,
+      "title": "Dubai Accident Distribution by Location",
+      "data": {
+        "url": "https://raw.githubusercontent.com/sheriefAbdallah/CS318/refs/heads/main/Traffic_Incidents.csv"
+      },
+      "transform": [
+        {"filter": "datum.acci_y > 23"},
+        {"bin": {"maxbins": 140}, "field": "acci_x", "as": "bin_latitude"},
+        {"bin": {"maxbins": 140}, "field": "acci_y", "as": "bin_longitude"},
+        {
+          "aggregate": [{"op": "count", "as": "density"}],
+          "groupby": ["bin_latitude", "bin_longitude"]
+        }
+      ],
+      "projection": {"type": "mercator"},
+      "mark": {"type": "circle", "opacity": 0.2},
+      "encoding": {
+        "longitude": {"field": "bin_longitude", "type": "quantitative"},
+        "latitude": {"field": "bin_latitude", "type": "quantitative"},
+        "size": {
+          "field": "density",
+          "type": "quantitative",
+          "scale": {"range": [30, 1000]}
+        },
+        "color": {
+          "field": "density",
+          "type": "quantitative",
+          "scale": {"scheme": "reds"}
+        },
+        "tooltip": [
+          {"field": "density", "title": "Accidents Reported"},
+          {"field": "bin_latitude", "title": "Latitude"},
+          {"field": "bin_longitude", "title": "Longitude"}
+        ]
+      },
+      "config": {}
+    };
+
+    
+    vegaEmbed('#barchart', barCh);
+    vegaEmbed('#linechart', lineCh);
+    vegaEmbed('#symbolmap', gsCh);
+  </script>
+</body>
+</html>
