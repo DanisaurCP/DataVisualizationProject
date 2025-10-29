@@ -1,0 +1,55 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "width": 1000,
+  "height": 600,
+  "title": "Accident Distribution by Hour of Day",
+  "data": {
+    "url": "https://raw.githubusercontent.com/sheriefAbdallah/CS318/refs/heads/main/Traffic_Incidents.csv",
+    "format": {
+      "type": "csv",
+      "parse": {"acci_time": "date:'%d/%m/%Y %H:%M:%S'"}
+    }
+  },
+  "transform": [
+    {"calculate": "hours(datum.acci_time)", "as": "hourofday"},
+    {"calculate": "timeFormat(datum.acci_time, '%A')", "as": "weekday"}
+  ],
+  "mark": {"type": "line", "point": {"size": 50}},
+  "encoding": {
+    "x": {
+      "title": "Hour of the Day",
+      "field": "hourofday",
+      "type": "ordinal",
+      "axis": {"labelAngle": 0}
+    },
+    "y": {
+      "title": "Number of Accidents Reported",
+      "aggregate": "count",
+      "type": "quantitative"
+    },
+    "color": {
+      "title": "Day of Week",
+      "field": "weekday",
+      "type": "nominal",
+      "sort": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ]
+    },
+    "tooltip": [
+      {"field": "weekday", "type": "ordinal", "title": "Day of Week"},
+      {"field": "hourofday", "type": "ordinal", "title": "Hour of Day"},
+      {
+        "aggregate": "count",
+        "type": "quantitative",
+        "title": "Accidents Reported"
+      }
+    ]
+  },
+  "config": {}
+}
